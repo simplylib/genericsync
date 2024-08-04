@@ -10,6 +10,10 @@ type Map[K any, V any] struct {
 	m sync.Map
 }
 
+func (m *Map[K, V]) CompareAndDelete(key, old K) (deleted bool) {
+	return m.CompareAndDelete(key, old)
+}
+
 func (m *Map[K, V]) Load(k K) (value V, ok bool) {
 	var v any
 	v, ok = m.m.Load(k)
