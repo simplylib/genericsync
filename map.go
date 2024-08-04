@@ -11,7 +11,11 @@ type Map[K any, V any] struct {
 }
 
 func (m *Map[K, V]) CompareAndDelete(key, old K) (deleted bool) {
-	return m.CompareAndDelete(key, old)
+	return m.m.CompareAndDelete(key, old)
+}
+
+func (m *Map[K, V]) CompareAndSwap(key K, old, new V) bool {
+	return m.m.CompareAndSwap(key, old, new)
 }
 
 func (m *Map[K, V]) Load(k K) (value V, ok bool) {
@@ -67,4 +71,10 @@ func (m *Map[K, V]) Range(f func(k K, v V) bool) {
 
 		return f(k, v)
 	})
+}
+
+func (m *Map[K, V]) Swap(key K, value V) (previous V, loaded bool) {
+	var v any
+	v, loaded = m.m.Swap(key, value)
+	return v.(V), loaded
 }

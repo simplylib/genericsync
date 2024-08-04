@@ -5,6 +5,115 @@ import (
 	"testing"
 )
 
+func TestMap_CompareAndDelete(t *testing.T) {
+	t.Parallel()
+
+	t.Run("golden path", func(t *testing.T) {
+		t.Parallel()
+
+		m := Map[int, int]{}
+
+		m.Store(0, 1)
+		if !m.CompareAndDelete(0, 1) {
+			t.Fatalf("expected CompareAndDelete to return true")
+		}
+
+		if _, ok := m.Load(0); ok {
+			t.Fatalf("Map contained value after it should have been deleted")
+		}
+
+		m.Store(1, 0)
+		if m.CompareAndDelete(1, 1) {
+			t.Fatalf("CompareAndDelete with wrong value should not have worked")
+		}
+	})
+
+	t.Run("pointer types", func(t *testing.T) {
+		t.Parallel()
+
+		m := Map[*int, *int]{}
+
+		zero, one := 0, 1
+
+		m.Store(&zero, &one)
+		if !m.CompareAndDelete(&zero, &one) {
+			t.Fatalf("expected CompareAndDelete to return true")
+		}
+
+		if _, ok := m.Load(&zero); ok {
+			t.Fatalf("Map contained value after it should have been deleted")
+		}
+
+		m.Store(&one, &zero)
+		if m.CompareAndDelete(&one, &one) {
+			t.Fatalf("CompareAndDelete with wrong value should not have worked")
+		}
+	})
+}
+
+func TestMap_CompareAndSwap(t *testing.T) {
+	t.Parallel()
+
+	t.Run("golden path", func(t *testing.T) {
+		t.Parallel()
+
+		m := Map[int, int]{}
+
+		m.Store(0, 1)
+
+		v, ok := m.Load(0)
+		if !ok {
+			t.Fatalf("key 0 should have been in the map, but wasn't")
+		}
+		if v != 1 {
+			t.Fatalf("value not 1, instead %v", v)
+		}
+
+		if !m.CompareAndSwap(0, 1, 2) {
+			t.Fatalf("value isn't 1")
+		}
+
+		v, ok = m.Load(0)
+		if !ok {
+			t.Fatalf("key 0 should have been in the map, but wasn't")
+		}
+
+		if v != 2 {
+			t.Fatalf("key 0 should have been 2, instead was %v", v)
+		}
+	})
+	t.Run("pointer types", func(t *testing.T) {
+		t.Parallel()
+
+		m := Map[*int, *int]{}
+
+		zero, one, two := 0, 1, 2
+
+		m.Store(&zero, &one)
+
+		v, ok := m.Load(&zero)
+		if !ok {
+			t.Fatalf("key 0 should have been in the map, but wasn't")
+		}
+		if v != &one {
+			t.Fatalf("value not 1, instead %v", v)
+		}
+
+		if !m.CompareAndSwap(&zero, &one, &two) {
+			t.Fatalf("value isn't 1")
+		}
+
+		v, ok = m.Load(&zero)
+		if !ok {
+			t.Fatalf("key 0 should have been in the map, but wasn't")
+		}
+
+		if v != &two {
+			t.Fatalf("key 0 should have been 2, instead was %v", v)
+		}
+	})
+}
+
 func TestMap_Delete(t *testing.T) {
 	t.Parallel()
 
@@ -161,5 +270,41 @@ func TestMap_Range(t *testing.T) {
 	mm.Store(fmt.Errorf("test"), nil)
 	mm.Range(func(k error, v error) bool {
 		return true
+	})
+}
+
+func TestMap_Swap(t *testing.T) {
+	t.Parallel()
+
+	t.Run("golden path", func(t *testing.T) {
+		t.Parallel()
+
+		m := Map[int, int]{}
+
+		m.Store(0, 1)
+
+		v, ok := m.Load(0)
+		if !ok {
+			t.Fatalf("key 0 should have been in the map, but wasn't")
+		}
+		if v != 1 {
+			t.Fatalf("value not 1, instead %v", v)
+		}
+
+		previous, loaded := m.Swap(0, 2)
+		if !loaded {
+			t.Fatalf("map didn't contain key 0")
+		}
+		if previous != 1 {
+			t.Fatalf("previous value should have been 1")
+		}
+
+		v, ok = m.Load(0)
+		if !ok {
+			t.Fatalf("key 0 should have been in the map, but wasn't")
+		}
+		if v != 2 {
+			t.Fatalf("value not 2, instead %v", v)
+		}
 	})
 }
